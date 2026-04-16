@@ -27,6 +27,8 @@ Sistema administrativo completo para gestao de nail designer, com controle finan
    npm run dev
    ```
 
+   senha do banco 292225Ramon@123
+
 ## Configuracao do Supabase
 
 1. Crie um projeto no Supabase (https://supabase.com)
