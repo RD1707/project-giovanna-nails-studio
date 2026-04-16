@@ -35,7 +35,7 @@ export default function Login() {
             <span className="text-2xl font-serif text-primary font-bold">GN</span>
           </div>
           <CardTitle className="text-2xl font-serif text-foreground">
-            Estudio Giovanna Nails
+            Estudio Giovana Nails
           </CardTitle>
           <p className="text-sm text-muted-foreground">Acesse o painel administrativo</p>
         </CardHeader>
