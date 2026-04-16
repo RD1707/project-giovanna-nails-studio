@@ -87,7 +87,7 @@ export default function MonthlyReport() {
 
     // Header
     doc.setFontSize(18);
-    doc.text('Estudio Giovanna Nails', 105, 20, { align: 'center' });
+    doc.text('Estudio Giovana Nails', 105, 20, { align: 'center' });
     doc.setFontSize(12);
     doc.text(`Relatorio Financeiro - ${monthName}`, 105, 30, { align: 'center' });
     doc.setLineWidth(0.5);
