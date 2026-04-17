@@ -1,103 +1,70 @@
 
 
-# Estúdio Giovanna Nails — Painel Administrativo
+## Objetivo
+3 melhorias principais + polish geral no sistema.
 
-## Visão Geral
-Sistema administrativo completo para gestão de uma nail designer, com controle financeiro, agenda, clientes e serviços. Design minimalista branco com detalhes em dourado (#C9A84C) e rosa (#E8A0BF), tipografia moderna (Inter/Playfair Display).
+## 1. Tipografia minimalista (Product Sans)
+Product Sans é proprietária do Google e não está no Google Fonts. Vou usar **Google Sans Display** (alternativa oficial pública mais próxima) com fallback para **Inter**. Para os títulos, troco a Playfair Display (serifada) por uma sans-serif geométrica mais limpa, mantendo hierarquia.
 
-## Autenticação & Controle de Acesso
-- Login com email/senha via Supabase Auth
-- Tabela `user_roles` com roles ADMIN e NAIL_DESIGNER (seguindo padrão seguro com `has_role()` security definer)
-- Rotas protegidas — apenas usuários autenticados acessam o painel
-- ADMIN pode gerenciar usuários; NAIL_DESIGNER tem acesso operacional
+- Body/UI: `Google Sans, Inter, system-ui` (peso 400/500)
+- Headings: mesma família, peso 600/700, tracking levemente reduzido
+- Atualizar `index.css` (import + `body`/`h1-h6`) e `tailwind.config.ts` (`fontFamily.sans` e `fontFamily.serif` apontando para a mesma stack para não quebrar `font-serif` existente)
 
-## Banco de Dados (SQL completo para Supabase)
-Arquivo SQL pronto para copiar e colar, incluindo:
-- **profiles** — dados do usuário vinculados a auth.users
-- **user_roles** — controle de permissões (ADMIN/NAIL_DESIGNER)
-- **clients** — clientes com nome, telefone, WhatsApp, Instagram, nascimento, observações
-- **services** — serviços (nome, valor, duração, status ativo/inativo)
-- **appointments** — agendamentos vinculados a cliente + serviços, com status, horários, valor
-- **appointment_services** — relação N:N entre agendamentos e serviços
-- **financial_categories** — categorias de receita/despesa (pré-populadas com seeds)
-- **financial_entries** — tabela principal de lançamentos financeiros
-- **bills_to_pay** — contas a pagar com vencimento, status, categoria
-- **notifications** — notificações internas
-- **schedule_blocks** — bloqueios de horário (folgas/intervalos)
-- RLS em todas as tabelas, triggers para auto-criação de perfil e integração financeira
+## 2. Lançamentos Financeiros — data customizável
+No `FinancialEntries.tsx` e `DailyCash.tsx`, adicionar campo `entry_date` editável (input `type="date"`) no formulário de novo lançamento, permitindo retroativos/futuros. Default = hoje. Validar com Zod (data válida, não > 1 ano no futuro).
 
-## Páginas & Módulos
+## 3. Cadastro de Clientes — novos campos + Anamnese
+Em `Clients.tsx`, dialog reorganizado em **abas** (Tabs do shadcn):
 
-### 1. Dashboard
-- Agenda do dia com próximos atendimentos
-- Cards financeiros: receita/despesa/saldo do dia e do mês
-- Alertas de contas a pagar vencidas ou próximas
-- Atalhos rápidos: novo agendamento, lançar no caixa, cadastrar cliente, relatório mensal
+**Aba "Dados Pessoais"**
+- Nome, CPF (com máscara e validação), telefone, WhatsApp, Instagram, nascimento
+- Novo: "Cliente desde" (date, default hoje)
+- Observações gerais
 
-### 2. Clientes
-- Lista com busca e filtros
-- Cadastro/edição com todos os campos
-- Visualização do histórico de agendamentos e financeiro
+**Aba "Ficha de Anamnese"** (opcional, foco em alongamento de unhas)
+- Já fez alongamento antes? (sim/não)
+- Tipo preferido (gel, fibra, acrigel, porcelana)
+- Alergias conhecidas (acrilato, formol, etc.) — texto livre
+- Possui diabetes / problemas circulatórios? (sim/não)
+- Possui micose, onicofagia, psoríase ungueal? (checkboxes)
+- Usa medicamento contínuo? (texto)
+- Está gestante/lactante? (sim/não)
+- Pratica esportes/atividade manual intensa? (texto)
+- Observações da designer
+- Data da última atualização da ficha (auto)
+- Assinatura/consentimento (checkbox "Declaro que as informações são verdadeiras")
 
-### 3. Serviços
-- CRUD de serviços (alongamento em gel, manutenção, remoção, etc.)
-- Campos: nome, valor padrão, duração média, ativo/inativo
-- Seeds com serviços comuns pré-cadastrados
+### Mudanças de schema (migration SQL)
+Adicionar à tabela `clients`:
+- `cpf text` (único, nullable)
+- `client_since date default current_date`
+- `anamnesis jsonb` (guarda toda a ficha de forma flexível, evita 15 colunas novas)
+- `anamnesis_updated_at timestamptz`
 
-### 4. Agenda
-- Calendário com visualização mensal, semanal e diária
-- Criação de agendamentos vinculados a cliente + serviço(s)
-- Valor puxado automaticamente dos serviços, editável
-- Status: agendado → confirmado → concluído → cancelado / não compareceu
-- Prevenção de conflitos de horário
-- Bloqueio de horários para folgas
-- Ao concluir: sugestão automática de lançamento financeiro
+Vou entregar o SQL atualizado em `supabase-schema.sql` + bloco de migration separado para quem já tem o banco rodando.
 
-### 5. Caixa Diário
-- Lançamento rápido de receitas e despesas do dia
-- Campos: data, tipo, categoria, valor, descrição, forma de pagamento, vínculo com cliente/agendamento
-- Alimenta automaticamente a tabela principal de lançamentos
+## 4. Melhorias gerais (polish)
+- **Validação Zod** nos formulários principais (clientes, lançamentos, contas a pagar)
+- **Máscaras** para CPF, telefone e valores monetários (R$)
+- **Estados de loading** nos botões de salvar (evita duplo-clique)
+- **Confirmação antes de excluir** (AlertDialog) — hoje deleta direto
+- **Empty states** mais elegantes e consistentes
+- **Toast de erro** quando Supabase retorna erro (hoje só sucesso)
+- **Formatação de moeda** centralizada em `src/lib/format.ts` (`formatBRL`, `formatDate`, `formatCPF`)
+- **Skeleton loaders** no Dashboard enquanto carrega métricas
+- **Atalho de teclado** `Cmd/Ctrl+K` para busca rápida (opcional, só se couber)
 
-### 6. Lançamentos Financeiros (Planilha Principal)
-- Tabela completa com todos os lançamentos
-- Filtros por período, tipo, categoria
-- Busca e edição manual
-- Possibilidade de ajustes retroativos
+## Arquivos afetados
+- `src/index.css`, `tailwind.config.ts` — fontes
+- `src/pages/Clients.tsx` — abas, anamnese, novos campos, validação
+- `src/pages/FinancialEntries.tsx`, `src/pages/DailyCash.tsx` — data customizável
+- `src/pages/BillsToPay.tsx` — confirmação delete + validação
+- `src/lib/format.ts` (novo) — helpers
+- `src/lib/validations.ts` (novo) — schemas Zod
+- `supabase-schema.sql` — colunas novas em clients + bloco ALTER para migração
+- Pequenos ajustes em `Dashboard.tsx` (skeletons) e componentes de UI conforme necessário
 
-### 7. Contas a Pagar
-- CRUD completo de contas
-- Status: pendente / pago / vencido
-- Destaque visual para vencidas e próximas do vencimento
-- Notificação/alerta no dia do vencimento (com som)
-- Integração com relatório financeiro mensal
-
-### 8. Relatório Mensal
-- Seleção de mês/ano
-- Total receitas, despesas, saldo
-- Detalhamento por categoria
-- Gráficos de evolução diária (recharts)
-- Exportação CSV e PDF com layout profissional (cabeçalho "Estúdio Giovanna Nails")
-
-### 9. Notificações
-- Painel de notificações internas
-- Alertas de agendamentos próximos, cancelamentos, contas vencendo
-- Estrutura preparada para integração futura com WhatsApp/email
-
-### 10. Configurações (ADMIN)
-- Gerenciamento de usuários
-- Edição de categorias financeiras
-- Configurações gerais do estúdio
-
-## Design
-- Fundo branco predominante, cards com bordas suaves
-- Dourado (#C9A84C) para destaques, botões primários e ícones
-- Rosa (#E8A0BF) para acentos secundários e badges
-- Tipografia: Inter (corpo) + Playfair Display (títulos)
-- Sidebar de navegação elegante e responsiva
-- Layout mobile-first, responsivo para tablet e desktop
-
-## Entregáveis
-- Código completo do front-end (React + TypeScript + Tailwind + shadcn/ui)
-- Arquivo SQL completo para Supabase (tabelas, RLS, seeds, triggers)
-- README.md profissional com instruções de setup, deploy e uso
+## Não incluído
+- Product Sans original (proprietária) — usarei alternativa visualmente equivalente e explicarei no chat
+- Atalho Cmd+K só se não inflar o escopo
 
