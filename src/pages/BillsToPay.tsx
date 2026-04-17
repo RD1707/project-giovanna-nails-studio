@@ -154,7 +154,7 @@ export default function BillsToPay() {
                 </Select>
               </div>
               <div><Label>Observacoes</Label><Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
-              <Button onClick={handleSave} className="w-full">{editId ? 'Salvar' : 'Cadastrar'}</Button>
+              <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? 'Salvando...' : (editId ? 'Salvar' : 'Cadastrar')}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -181,7 +181,7 @@ export default function BillsToPay() {
                   <p className="font-bold text-destructive">{formatCurrency(b.amount)}</p>
                   <Button size="sm" onClick={() => markPaid(b)} className="text-xs h-7">Pagar</Button>
                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEdit(b)}><Pencil className="h-3 w-3" /></Button>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(b.id)}><Trash2 className="h-3 w-3" /></Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(b.id)}><Trash2 className="h-3 w-3" /></Button>
                 </div>
               </CardContent>
             </Card>
@@ -209,6 +209,19 @@ export default function BillsToPay() {
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => { if (!o) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir conta?</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
