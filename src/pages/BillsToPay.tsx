@@ -99,8 +99,14 @@ export default function BillsToPay() {
     fetchData();
   };
 
-  const handleDelete = async (id: string) => {
-    await supabase.from('bills_to_pay').delete().eq('id', id);
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from('bills_to_pay').delete().eq('id', deleteId);
+    setDeleteId(null);
+    if (error) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      return;
+    }
     toast({ title: 'Conta removida' }); fetchData();
   };
 
@@ -109,7 +115,7 @@ export default function BillsToPay() {
     setEditId(b.id); setOpen(true);
   };
 
-  const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+  const formatCurrency = formatBRL;
 
   const pendingBills = bills.filter(b => b.status === 'pendente' || b.status === 'vencido');
   const paidBills = bills.filter(b => b.status === 'pago');
