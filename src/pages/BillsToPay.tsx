@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, CreditCard, AlertTriangle, CheckCircle, Clock, Pencil, Trash2 } from 'lucide-react';
-import { format, isPast, isToday, addDays } from 'date-fns';
+import { format, isPast, isToday } from 'date-fns';
+import { formatBRL, formatDate } from '@/lib/format';
 
 interface Bill {
   id: string;
@@ -31,6 +36,8 @@ export default function BillsToPay() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ due_date: '', description: '', amount: '', category_id: '', notes: '' });
+  const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => { fetchData(); }, []);
@@ -92,8 +99,14 @@ export default function BillsToPay() {
     fetchData();
   };
 
-  const handleDelete = async (id: string) => {
-    await supabase.from('bills_to_pay').delete().eq('id', id);
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from('bills_to_pay').delete().eq('id', deleteId);
+    setDeleteId(null);
+    if (error) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      return;
+    }
     toast({ title: 'Conta removida' }); fetchData();
   };
 
@@ -102,7 +115,7 @@ export default function BillsToPay() {
     setEditId(b.id); setOpen(true);
   };
 
-  const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+  const formatCurrency = formatBRL;
 
   const pendingBills = bills.filter(b => b.status === 'pendente' || b.status === 'vencido');
   const paidBills = bills.filter(b => b.status === 'pago');
@@ -147,7 +160,7 @@ export default function BillsToPay() {
                 </Select>
               </div>
               <div><Label>Observacoes</Label><Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
-              <Button onClick={handleSave} className="w-full">{editId ? 'Salvar' : 'Cadastrar'}</Button>
+              <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? 'Salvando...' : (editId ? 'Salvar' : 'Cadastrar')}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -174,7 +187,7 @@ export default function BillsToPay() {
                   <p className="font-bold text-destructive">{formatCurrency(b.amount)}</p>
                   <Button size="sm" onClick={() => markPaid(b)} className="text-xs h-7">Pagar</Button>
                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEdit(b)}><Pencil className="h-3 w-3" /></Button>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(b.id)}><Trash2 className="h-3 w-3" /></Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(b.id)}><Trash2 className="h-3 w-3" /></Button>
                 </div>
               </CardContent>
             </Card>
@@ -202,6 +215,19 @@ export default function BillsToPay() {
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => { if (!o) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir conta?</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
