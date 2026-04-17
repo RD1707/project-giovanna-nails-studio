@@ -36,6 +36,8 @@ export default function BillsToPay() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ due_date: '', description: '', amount: '', category_id: '', notes: '' });
+  const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => { fetchData(); }, []);
