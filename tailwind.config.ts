@@ -14,8 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        serif: ['Playfair Display', 'serif'],
+        sans: ['Google Sans Display', 'Inter', 'system-ui', 'sans-serif'],
+        serif: ['Google Sans Display', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Google Sans Display', 'Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
