@@ -34,11 +34,15 @@ CREATE TABLE public.user_roles (
 CREATE TABLE public.clients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   full_name TEXT NOT NULL,
+  cpf TEXT UNIQUE,
   phone TEXT,
   whatsapp TEXT,
   instagram TEXT,
   birth_date DATE,
+  client_since DATE DEFAULT CURRENT_DATE,
   notes TEXT,
+  anamnesis JSONB,
+  anamnesis_updated_at TIMESTAMPTZ,
   active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()

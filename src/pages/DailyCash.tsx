@@ -63,11 +63,17 @@ export default function DailyCash() {
     if (cl) setClients(cl as Client[]);
   };
 
+  const [saving, setSaving] = useState(false);
+
   const handleSave = async () => {
     if (!form.amount || parseFloat(form.amount) <= 0) {
       toast({ title: 'Valor obrigatorio', variant: 'destructive' }); return;
     }
-    await supabase.from('financial_entries').insert({
+    if (!form.entry_date) {
+      toast({ title: 'Data obrigatoria', variant: 'destructive' }); return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from('financial_entries').insert({
       entry_date: form.entry_date,
       type: form.type,
       category_id: form.category_id || null,
@@ -76,6 +82,11 @@ export default function DailyCash() {
       payment_method: form.payment_method,
       client_id: form.client_id || null,
     });
+    setSaving(false);
+    if (error) {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+      return;
+    }
     toast({ title: 'Lancamento registrado' });
     setOpen(false);
     setForm({ type: 'receita', category_id: '', amount: '', description: '', payment_method: 'pix', client_id: '', entry_date: today });
@@ -107,7 +118,13 @@ export default function DailyCash() {
                 <Button type="button" className="flex-1" variant={form.type === 'despesa' ? 'destructive' : 'outline'}
                   onClick={() => setForm({ ...form, type: 'despesa', category_id: '' })}>Despesa</Button>
               </div>
-              <div><Label>Valor (R$) *</Label><Input type="number" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Data do Lançamento *</Label>
+                  <Input type="date" value={form.entry_date} onChange={e => setForm({ ...form, entry_date: e.target.value })} />
+                </div>
+                <div><Label>Valor (R$) *</Label><Input type="number" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></div>
+              </div>
               <div>
                 <Label>Categoria</Label>
                 <Select value={form.category_id} onValueChange={v => setForm({ ...form, category_id: v })}>
@@ -130,7 +147,7 @@ export default function DailyCash() {
                 </Select>
               </div>
               <div><Label>Descricao</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
-              <Button onClick={handleSave} className="w-full">Lancar</Button>
+              <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? 'Salvando...' : 'Lancar'}</Button>
             </div>
           </DialogContent>
         </Dialog>
