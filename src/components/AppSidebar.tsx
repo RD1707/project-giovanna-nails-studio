@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Scissors, Calendar, Wallet, FileText,
-  Receipt, Bell, Settings, LogOut, CreditCard
+  Receipt, Bell, Settings, LogOut, CreditCard, CheckSquare
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
@@ -27,6 +27,7 @@ const financialItems = [
 ];
 
 const systemItems = [
+  { title: 'Tarefas', url: '/tarefas', icon: CheckSquare },
   { title: 'Notificacoes', url: '/notificacoes', icon: Bell },
   { title: 'Configuracoes', url: '/configuracoes', icon: Settings },
 ];

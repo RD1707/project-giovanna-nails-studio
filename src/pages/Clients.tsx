@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Pencil, Trash2, Users, ClipboardList } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Users, ClipboardList, FileText } from 'lucide-react';
 import { formatCPF, isValidCPF, formatPhone, formatDate } from '@/lib/format';
 import type { AnamnesisData } from '@/lib/validations';
 
@@ -73,14 +74,20 @@ export default function Clients() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => { fetchClients(); }, []);
 
   const fetchClients = async () => {
-    const { data, error } = await supabase.from('clients').select('*').order('full_name');
-    if (error) { toast({ title: 'Erro', description: error.message, variant: 'destructive' }); return; }
-    if (data) setClients(data as unknown as Client[]);
+    try {
+      const { data, error } = await supabase.from('clients').select('*').order('full_name');
+      if (error) { toast({ title: 'Erro', description: error.message, variant: 'destructive' }); return; }
+      if (data) setClients(data as unknown as Client[]);
+    } catch (err: any) {
+      toast({ title: 'Erro Inesperado', description: err.message, variant: 'destructive' });
+    }
   };
 
   const resetForm = () => {
@@ -100,43 +107,48 @@ export default function Clients() {
 
     setSaving(true);
 
-    // Detect if anamnesis was filled/changed
-    const hasAnamnesisData = Object.entries(anamnesis).some(([k, v]) => {
-      if (k === 'consent') return false;
-      if (typeof v === 'boolean') return v === true;
-      return typeof v === 'string' && v.trim().length > 0;
-    });
+    try {
+      // Detect if anamnesis was filled/changed
+      const hasAnamnesisData = Object.entries(anamnesis).some(([k, v]) => {
+        if (k === 'consent') return false;
+        if (typeof v === 'boolean') return v === true;
+        return typeof v === 'string' && v.trim().length > 0;
+      });
 
-    const anamnesisUpdatedAt = hasAnamnesisData
-      ? new Date().toISOString()
-      : editAnamnesisUpdatedAt;
+      const anamnesisUpdatedAt = hasAnamnesisData
+        ? new Date().toISOString()
+        : editAnamnesisUpdatedAt;
 
-    const payload = {
-      full_name: form.full_name.trim(),
-      cpf: form.cpf ? form.cpf.replace(/\D/g, '') : null,
-      phone: form.phone || null,
-      whatsapp: form.whatsapp || null,
-      instagram: form.instagram || null,
-      birth_date: form.birth_date || null,
-      client_since: form.client_since || null,
-      notes: form.notes || null,
-      anamnesis: hasAnamnesisData ? anamnesis : null,
-      anamnesis_updated_at: anamnesisUpdatedAt,
-    };
+      const payload = {
+        full_name: form.full_name.trim(),
+        cpf: form.cpf ? form.cpf.replace(/\D/g, '') : null,
+        phone: form.phone || null,
+        whatsapp: form.whatsapp || null,
+        instagram: form.instagram || null,
+        birth_date: form.birth_date || null,
+        client_since: form.client_since || null,
+        notes: form.notes || null,
+        anamnesis: hasAnamnesisData ? anamnesis : null,
+        anamnesis_updated_at: anamnesisUpdatedAt,
+      };
 
-    const { error } = editId
-      ? await supabase.from('clients').update(payload).eq('id', editId)
-      : await supabase.from('clients').insert(payload);
+      const { error } = editId
+        ? await supabase.from('clients').update(payload).eq('id', editId)
+        : await supabase.from('clients').insert(payload);
 
-    setSaving(false);
-    if (error) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
-      return;
+      if (error) {
+        toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: editId ? 'Cliente atualizado' : 'Cliente cadastrado' });
+        setOpen(false);
+        resetForm();
+        fetchClients();
+      }
+    } catch (err: any) {
+      toast({ title: 'Erro Inesperado', description: err.message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
     }
-    toast({ title: editId ? 'Cliente atualizado' : 'Cliente cadastrado' });
-    setOpen(false);
-    resetForm();
-    fetchClients();
   };
 
   const handleEdit = (c: Client) => {
@@ -158,14 +170,19 @@ export default function Clients() {
 
   const confirmDelete = async () => {
     if (!deleteId) return;
-    const { error } = await supabase.from('clients').delete().eq('id', deleteId);
-    setDeleteId(null);
-    if (error) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
-      return;
+    try {
+      const { error } = await supabase.from('clients').delete().eq('id', deleteId);
+      if (error) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'Cliente removido' });
+        fetchClients();
+      }
+    } catch (err: any) {
+      toast({ title: 'Erro Inesperado', description: err.message, variant: 'destructive' });
+    } finally {
+      setDeleteId(null);
     }
-    toast({ title: 'Cliente removido' });
-    fetchClients();
   };
 
   const filtered = clients.filter(c =>
@@ -179,7 +196,9 @@ export default function Clients() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Users className="h-6 w-6 text-primary" /> Clientes
+          </h1>
           <p className="text-muted-foreground text-sm">{clients.length} cliente(s) cadastrado(s)</p>
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
@@ -352,9 +371,16 @@ export default function Clients() {
               </TabsContent>
             </Tabs>
 
-            <Button onClick={handleSave} disabled={saving} className="w-full mt-4">
-              {saving ? 'Salvando...' : (editId ? 'Salvar alterações' : 'Cadastrar cliente')}
-            </Button>
+            <div className="flex gap-2 mt-4">
+              <Button onClick={handleSave} disabled={saving} className="flex-1">
+                {saving ? 'Salvando...' : (editId ? 'Salvar alterações' : 'Cadastrar cliente')}
+              </Button>
+              {editId && (
+                <Button variant="outline" onClick={() => navigate(`/cliente/${editId}/relatorio`)}>
+                  <FileText className="h-4 w-4 mr-2" /> Relatório
+                </Button>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -373,17 +399,17 @@ export default function Clients() {
         <div className="grid gap-3">
           {filtered.map(c => (
             <Card key={c.id} className="border-primary/10 hover:shadow-md transition-shadow">
-              <CardContent className="p-4 flex items-center justify-between gap-3">
+              <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium">{c.full_name}</p>
+                    <p className="font-medium text-lg">{c.full_name}</p>
                     {c.anamnesis && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary flex items-center gap-1">
                         <ClipboardList className="h-2.5 w-2.5" /> Anamnese
                       </span>
                     )}
                   </div>
-                  <div className="flex gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+                  <div className="flex gap-3 text-sm text-muted-foreground mt-1 flex-wrap">
                     {c.cpf && <span>CPF: {formatCPF(c.cpf)}</span>}
                     {c.phone && <span>{c.phone}</span>}
                     {c.whatsapp && <span>WhatsApp: {c.whatsapp}</span>}
@@ -391,7 +417,10 @@ export default function Clients() {
                     {c.client_since && <span>Cliente desde: {formatDate(c.client_since, 'MM/yyyy')}</span>}
                   </div>
                 </div>
-                <div className="flex gap-1 shrink-0">
+                <div className="flex items-center gap-1 shrink-0 self-end sm:self-auto">
+                  <Button size="sm" variant="secondary" className="gap-1" onClick={() => navigate(`/cliente/${c.id}/relatorio`)}>
+                    <FileText className="h-4 w-4" /> <span className="hidden sm:inline">Relatório</span>
+                  </Button>
                   <Button size="icon" variant="ghost" onClick={() => handleEdit(c)}>
                     <Pencil className="h-4 w-4" />
                   </Button>

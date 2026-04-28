@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CalendarPlus, Info } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, addMonths, subMonths, isSameDay, isSameMonth, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -182,6 +182,48 @@ export default function Schedule() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-serif font-bold text-foreground">Agenda</h1>
         <div className="flex items-center gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 hidden sm:flex">
+                <CalendarPlus className="h-4 w-4" />
+                Integrar Google Agenda
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <CalendarPlus className="h-5 w-5 text-primary" />
+                  Integração com Google Agenda
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 text-sm text-muted-foreground mt-4">
+                <p>
+                  Para habilitar a sincronização bidirecional com o Google Agenda, é necessário configurar o projeto no Google Cloud Console.
+                </p>
+                <div className="bg-muted/50 p-4 rounded-lg space-y-2 border border-border">
+                  <h4 className="font-semibold text-foreground flex items-center gap-2">
+                    <Info className="h-4 w-4" /> Passos Necessários:
+                  </h4>
+                  <ol className="list-decimal list-inside space-y-1 ml-1">
+                    <li>Acesse o <strong>Google Cloud Console</strong>.</li>
+                    <li>Crie um novo projeto.</li>
+                    <li>Habilite a <strong>Google Calendar API</strong>.</li>
+                    <li>Configure a tela de consentimento OAuth.</li>
+                    <li>Crie credenciais do tipo <strong>ID do cliente OAuth 2.0</strong> para Aplicativo da Web.</li>
+                    <li>Adicione as URIs de redirecionamento autorizadas.</li>
+                    <li>Adicione o <strong>Client ID</strong> nas variáveis de ambiente (<code className="bg-muted px-1 rounded">VITE_GOOGLE_CLIENT_ID</code>).</li>
+                  </ol>
+                </div>
+                <p>
+                  Após a configuração, você poderá fazer o login com sua conta Google e visualizar seus eventos pessoais diretamente nesta agenda.
+                </p>
+                <Button className="w-full mt-2" disabled>
+                  Conectar (Em breve)
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <div className="flex bg-muted rounded-lg p-0.5">
             {(['month', 'week', 'day'] as ViewMode[]).map(m => (
               <Button key={m} size="sm" variant={viewMode === m ? 'default' : 'ghost'} onClick={() => setViewMode(m)} className="text-xs">
