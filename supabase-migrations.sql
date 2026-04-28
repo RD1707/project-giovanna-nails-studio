@@ -1,4 +1,11 @@
 -- 1. Updates to the clients table
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS cpf TEXT UNIQUE;
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS whatsapp TEXT;
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS instagram TEXT;
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS birth_date DATE;
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS client_since DATE DEFAULT CURRENT_DATE;
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS notes TEXT;
 ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS anamnesis JSONB;
 ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS anamnesis_updated_at TIMESTAMPTZ;
 
